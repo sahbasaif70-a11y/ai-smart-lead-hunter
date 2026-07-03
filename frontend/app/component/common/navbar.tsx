@@ -44,11 +44,11 @@ export default function Navbar(){
       {isOpen && (
         <div className="md:hidden absolute top-full left-0 w-full bg-[#020617] border-b border-[#11C9F2]/10 p-6 flex flex-col gap-6 z-50 animate-in fade-in slide-in-from-top-2">
           <div className="flex flex-col gap-4 text-gray-400 text-sm font-medium">
-            <a href="#" onClick={() => setIsOpen(false)} className="hover:text-white">Home</a>
-            <a href="#" onClick={() => setIsOpen(false)} className="hover:text-white">Scan</a>
-            <a href="#" onClick={() => setIsOpen(false)} className="hover:text-white">Form</a>
-            <a href="#" onClick={() => setIsOpen(false)} className="hover:text-white">Records</a>
-            <a href="#" onClick={() => setIsOpen(false)} className="hover:text-white">Dashboard</a>
+            <a href="/" onClick={() => setIsOpen(false)} className="hover:text-white">Home</a>
+            <a href="scan" onClick={() => setIsOpen(false)} className="hover:text-white">Scan</a>
+            <a href="extract" onClick={() => setIsOpen(false)} className="hover:text-white">Form</a>
+            <a href="records" onClick={() => setIsOpen(false)} className="hover:text-white">Records</a>
+            <a href="dashboard" onClick={() => setIsOpen(false)} className="hover:text-white">Dashboard</a>
           </div>
           <button className="w-full bg-gradient-to-r from-cyan-400 to-blue-700 text-white py-3 rounded-xl font-bold">
             Start Scan
