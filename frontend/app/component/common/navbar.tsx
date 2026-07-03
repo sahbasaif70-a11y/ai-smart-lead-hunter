@@ -19,11 +19,11 @@ export default function Navbar(){
 
         {/* 2. Desktop Links (Hidden on Mobile) */}
         <div className="hidden md:flex gap-8 text-sm font-medium text-gray-400">
-          <a href="#" className="hover:text-white transition-colors">Home</a>
-          <a href="#" className="hover:text-white transition-colors">Scan</a>
-          <a href="#" className="hover:text-white transition-colors">Form</a>
-          <a href="#" className="hover:text-white transition-colors">Records</a>
-          <a href="#" className="hover:text-white transition-colors">Dashboard</a>
+          <a href="/" className="hover:text-white transition-colors">Home</a>
+          <a href="scan" className="hover:text-white transition-colors">Scan</a>
+          <a href="extract" className="hover:text-white transition-colors">Form</a>
+          <a href="records" className="hover:text-white transition-colors">Records</a>
+          <a href="dashboard" className="hover:text-white transition-colors">Dashboard</a>
         </div>
 
         {/* 3. Desktop Button (Hidden on Mobile) */}

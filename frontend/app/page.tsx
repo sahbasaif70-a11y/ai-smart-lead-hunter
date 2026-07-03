@@ -1,3 +1,4 @@
+import Link from "next/link";
 export default function Home(){
   return(
 
@@ -25,9 +26,12 @@ export default function Home(){
 
     {/* Two Buttons Group */}
     <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+    {/* Navigation Link ADDED */}
+    <Link href="scan" className="w-full sm:w-auto">
       <button className=" sm:w-auto bg-gradient-to-r from-[#0bb9b9] to-[blue] hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-bold transition-all shadow-lg shadow-blue-500/20 text-sm">
         Start Scanning
       </button>
+      </Link>
       <button className=" sm:w-auto flex items-center gap-2 text-white border border-white/14 rounded-lg hover:bg-cyan-400 font-semibold px-7 py-3 transition-all shadow-lg shadow-blue-500/20 text-sm">
         Watch Demo <span className="text-xl">→</span>
       </button>

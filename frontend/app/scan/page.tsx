@@ -2,7 +2,7 @@
 import React, { useRef, useCallback, useEffect, useState } from "react";
 import Webcam from "react-webcam";
 import { Zap, RotateCcw, Camera, Lightbulb } from "lucide-react";
-
+import Link from "next/link"; 
 export default function ScanPage() {
     const webcamRef = useRef<Webcam>(null);
     const [status, setStatus] = useState("Initializing..");

@@ -17,9 +17,9 @@ export default function extractScreen(){
         </div>
        </div> 
        {/* Main Content Area */}
-       <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:pl-8 ">
+       <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:pl-8  ">
         {/* A: LEFT SIDE -Card Preview(Col-span 4) */}
-        <div className="md:col-span-5 space-y-6">
+        <div className="md:col-span-5 space-y-6  bg-[#020617]/80">
             <div className=" border border-white/10 overflow-hidden rounded-xl p-4 pt-15">
             <div className="aspect-[3/2] rounded-2xl border border-white/10 overflow-hidden bg-white/5 shadow-2xl">
             <img src="/card-sample.png" className="w-full h-full object-cover opacity-80" alt="Scanned Card"/>
@@ -41,7 +41,7 @@ export default function extractScreen(){
             </div>
         </div>
         {/* B: RIGHT SIDE - Form Fields(Col-span 8) */}
-        <div className="md:col-span-6 span-y-3 ">
+        <div className="md:col-span-6 span-y-3  bg-[#020617]/80 ">
             {/* Form Fields */}
             <div className="space-y-1.5">
                 <label className="text-[10px] text-gray-500 uppercase font-bold tracking-wider ml-1">Full Name</label>
