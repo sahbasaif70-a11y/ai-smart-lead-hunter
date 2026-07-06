@@ -1,11 +1,51 @@
 "use client";
 import React, { useRef, useCallback, useEffect, useState } from "react";
 import Webcam from "react-webcam";
-import { Zap, RotateCcw, Camera, Lightbulb } from "lucide-react";
+import { Zap, RotateCcw, Camera, Lightbulb, CreditCard, User, Globe, Car } from "lucide-react";
 import Link from "next/link"; 
+import { useRouter } from "next/navigation";
+
 export default function ScanPage() {
+    const router = useRouter();
     const webcamRef = useRef<Webcam>(null);
     const [status, setStatus] = useState("Initializing..");
+    const [cardType, setCardType] = useState("business"); // Dynamic Type
+    const [loading, setLoading] = useState(false);
+
+    const cardOptions = [
+      { id: 'business', label: 'Business', icon: <CreditCard size={18} /> },
+      { id: 'cnic', label: 'CNIC', icon: <User size={18} /> },
+      { id: 'passport', label: 'Passport', icon: <Globe size={18} /> },
+      { id: 'license', label: 'License', icon: <Car size={18} /> },
+    ];
+
+    const capture = useCallback(async () =>
+    {
+      const imageSrc = webcamRef.current?.getScreenshot();
+      if(imageSrc){
+        setLoading(true);
+        try {
+          const response = await fetch("http://localhost:5000/api/extract",{
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ image: imageSrc, cardType: cardType })
+          });
+          const result = await response.json();
+          if (result.success) {
+            localStorage.setItem("scannedData", JSON.stringify(result.data));
+            localStorage.setItem("scannedImage", result.imageUrl);
+            localStorage.setItem("scannedType", cardType);
+            router.push("/extract");
+          } else {
+            alert("AI Failed: " + result.error);
+          }
+        } catch (error) {
+          alert("Backend Server is not running!");
+        } finally {
+          setLoading(false);
+        }
+      }
+    },[webcamRef, cardType, router]);
 
     useEffect(() =>{
         if(typeof window !== "undefined"){
@@ -17,25 +57,35 @@ export default function ScanPage() {
                     }
                 }
         },[]);
-    const capture = useCallback(() => {
-        const imageSrc = webcamRef.current?.getScreenshot();
-        console.log("Captured Image:", imageSrc);
-        if(imageSrc) alert("Image Captured!");
-        }, [webcamRef]);
+    
   return (
     <main className="min-h-screen bg-[#020617] bg-grid flex flex-col items-center p-2 md:p-8 md:pt-20 ">
       <div className="max-w-4xl w-full  bg-[#020617] border border-white/5 rounded-3xl py-2 px-4 md:p-6 lg:px-8 shadow-3xl">
 
         {/* --- 1. HEADER SECTION --- */}
-        <div className="flex flex-row justify-between items-center mb-6 md:mb-8 w-full">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 md:mb-8 w-full">
           <div>
-            <h2 className="text-xl md:text-2xl font-bold text-white justify-center font-space uppercase tracking-tight">Scan Card</h2>
-            <p className="text-gray-500 text-[10px] md:text-xs">Capture or upload a business card</p>
+            <h2 className="text-xl md:text-2xl font-bold text-white font-space uppercase tracking-tight">Scan Card</h2>
+            <p className="text-gray-500 text-[10px] md:text-xs">Select document type to start scanning</p>
           </div>
-          <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-gray-400 text-[10px] md:text-xs hover:bg-white/10 transition-all">
-            < Lightbulb size={14} className="text-yellow-500"/>
-             <span className="hidden sm:inline">Tips</span>
-          </button>
+
+          {/* Visual Card Selector */}
+          <div className="flex gap-2 overflow-x-auto pb-2 w-full md:w-auto no-scrollbar">
+            {cardOptions.map((opt) => (
+              <button
+                key={opt.id}
+                onClick={() => setCardType(opt.id)}
+                className={`flex flex-col items-center justify-center min-w-[70px] md:min-w-[80px] p-2 rounded-xl border transition-all ${
+                  cardType === opt.id
+                  ? "bg-blue-600/20 border-blue-500 text-blue-400 shadow-[0_0_15px_rgba(37,99,235,0.2)]"
+                  : "bg-white/5 border-white/10 text-gray-500 hover:border-white/20"
+                }`}
+              >
+                {opt.icon}
+                <span className="text-[9px] mt-1 font-bold uppercase tracking-tighter">{opt.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* --- 2. MAIN SCANNER & CONTROLS --- */}
@@ -86,9 +136,10 @@ export default function ScanPage() {
 
               {/* Capture Button */}
               <button
-              onClick={capture}
+              onClick={capture} disabled={loading}
               className="w-20 h-20 rounded-full border-4 border-white p-1 hover:scale-105 transition-all active:scale-95 shadow-xl">
                 <div className="w-full h-full bg-blue-600 rounded-full shadow-[0_0_30px_rgba(37,99,235,0.4)]"></div>
+                { loading ? "Scanning...":"CAPTURE"}
               </button>
             </div>
 
