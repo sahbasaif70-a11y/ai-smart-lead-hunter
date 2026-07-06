@@ -25,7 +25,7 @@ export default function ScanPage() {
       if(imageSrc){
         setLoading(true);
         try {
-          const response = await fetch("http://localhost:5000/api/extract",{
+          const response = await fetch("/api/extract",{
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({ image: imageSrc, cardType: cardType })
