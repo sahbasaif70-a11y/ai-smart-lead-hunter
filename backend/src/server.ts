@@ -88,7 +88,7 @@ app.post('/api/extract', async (req: any, res: any) => {
             temperature: 0
         });
 
-        const extractedData = JSON.parse(completion.choices[0].message.content || "{}");
+        const extractedData = JSON.parse(completion.choices[0]?.message?.content || "{}");
 
         console.log("Success! Extracted:", extractedData);
         res.json({ success: true, data: extractedData, imageUrl });
