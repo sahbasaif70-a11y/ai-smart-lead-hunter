@@ -21,9 +21,36 @@ export default function ScanPage() {
     ];
 
     const handleCapture = useCallback(() => {
-        const imageSrc = webcamRef.current?.getScreenshot();
-        if (imageSrc) {
-            setCapturedImages(prev => [...prev, imageSrc]);
+        const video = webcamRef.current?.video;
+        if (video) {
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+
+            // Set canvas size to a high resolution for better OCR
+            const outputWidth = 1200;
+            const outputHeight = 800;
+            canvas.width = outputWidth;
+            canvas.height = outputHeight;
+
+            if (ctx) {
+                const videoWidth = video.videoWidth;
+                const videoHeight = video.videoHeight;
+
+                // Crop the central 85% area (matching our UI mask)
+                const cropWidth = videoWidth * 0.85;
+                const cropHeight = cropWidth * (2/3);
+                const startX = (videoWidth - cropWidth) / 2;
+                const startY = (videoHeight - cropHeight) / 2;
+
+                ctx.drawImage(
+                    video,
+                    startX, startY, cropWidth, cropHeight, // Source
+                    0, 0, outputWidth, outputHeight       // Destination
+                );
+
+                const croppedImage = canvas.toDataURL("image/jpeg", 0.95);
+                setCapturedImages(prev => [...prev, croppedImage]);
+            }
         }
     }, [webcamRef]);
 
