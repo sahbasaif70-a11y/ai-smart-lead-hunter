@@ -72,7 +72,7 @@ app.post('/api/extract', async (req: any, res: any) => {
             EXTRACTION RULES:
             - NAME: Look for the most prominent person's name. It's usually at the top or center-left.if multiple names ()such as partners or sub manager or sub manager) exist, then enter all names and separated them with comma.
             - JOB TITLE: Check the line directly below the name. Look for "Manager", "Executive", "Director", "Engineer", "Officer" Please accurately fetch the job title.
-            - COMPANY: Look for branding at the top or near the logo. Also look for names containing "Petroleum", "Service", "Corporation", "LTD", "PVT", "Group", "Industries", "TGPS", "Taj".
+            - COMPANY: Look for branding at the top or near the logo. Also look for names containing "Petroleum", "Service", "Corporation", "LTD", "PVT", "Group", "Industries", "TGPS", "Taj" also if company have more than one name enter all and separated with comma.
             - EMAIL: Find ALL strings with "@". Even if they look broken (e.g., "pervez.sohu@tgps.pk"). Combine multiple with commas.
             - PHONE: Extract ALL numerical patterns that look like phone numbers (e.g., +92-XX-XXXXXXX, 03XX-XXXXXXX, (+92), (92-21)like patterns,. Look for labels like "Tel", "Mob", "Cell", "Ph", "Fax". If multiple numbers exist, prioritize the Mobile number. Combine them with slashes if needed.
             - WEBSITE: Look for strings containing "www" or ".com", ".pk", ".net".
