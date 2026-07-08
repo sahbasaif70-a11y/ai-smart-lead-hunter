@@ -25,7 +25,7 @@ export default function ScanPage() {
       if(imageSrc){
         setLoading(true);
         try {
-          const response = await fetch("/api/extract",{
+          const response = await fetch("http://localhost:5000/api/extract",{
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({ image: imageSrc, cardType: cardType })
@@ -98,10 +98,17 @@ export default function ScanPage() {
            audio={false}
            ref={webcamRef}
            screenshotFormat="image/jpeg"
-           className="rounded-3xl w-full object-cover" playsInline
-           videoConstraints={{ facingMode: "environment" }}
-           onUserMedia={() => alert("Camera Connected!")}
-           onUserMediaError={(err) => alert("Camera Error: " + err)}
+           screenshotQuality={1}
+           className="rounded-3xl w-full h-full object-cover" playsInline
+           videoConstraints={{
+             facingMode: "environment",
+             width: { ideal: 1920 },
+             height: { ideal: 1080 }
+           }}
+           onUserMedia={() => console.log("Camera Connected")}
+           onUserMediaError={(err) => {
+             console.error("Camera Error: ", err);
+           }}
             />
             <div className="absolute inset-0 pointer-events-none  ">
             {/* Viewfinder Corners */}

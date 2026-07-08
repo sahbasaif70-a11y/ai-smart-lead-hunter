@@ -4,11 +4,18 @@ import dotenv from 'dotenv';
 import {v2 as cloudinary} from 'cloudinary';
 import OpenAI from 'openai';
 import Tesseract from 'tesseract.js';
+import mongoose from 'mongoose';
+import Lead from './models/Lead';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Database Connection
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/lead_hunter')
+    .then(() => console.log("Connected to MongoDB"))
+    .catch(err => console.error("Could not connect to MongoDB", err));
 
 // Groq Setup
 const groq = new OpenAI({
@@ -24,6 +31,10 @@ cloudinary.config({
 
 app.use(cors());
 app.use(express.json({ limit: '10mb'}));
+
+app.get('/api/health', (req, res) => {
+    res.json({ status: "ok", db: mongoose.connection.readyState });
+});
 
 app.post('/api/extract', async (req: any, res: any) => {
     try {
@@ -47,17 +58,24 @@ app.post('/api/extract', async (req: any, res: any) => {
         console.log(`Step 2: AI Parsing for ${cardType}...`);
 
         const systemPrompt = `
-            You are a professional data extractor.
-            The provided text is messy OCR output from a ${cardType}.
-            Fix all spelling errors and identify fields based on patterns.
+            You are an elite data extraction AI. Your task is to extract information from messy OCR text of a ${cardType}.
+            Even if the OCR is broken or missing characters, use your intelligence to reconstruct the correct data.
 
-            RULES for CNIC:
-            - Find a 13-digit number (e.g. 35405-0743082-6) -> identity_number.
-            - Name is usually the first clean line. Father name is the second.
-            - Find "Pakistan" -> country_of_stay.
+            EXTRACTION RULES:
+            - NAME: Look for the most prominent person's name. It's usually at the top or center-left.
+            - JOB TITLE: Check the line directly below the name. Look for "Manager", "Executive", "Director", "Engineer", "Officer".
+            - COMPANY: Look for branding at the top or near the logo. Also look for names containing "Petroleum", "Service", "Corporation", "LTD", "PVT", "Group", "Industries", "TGPS", "Taj".
+            - EMAIL: Find ALL strings with "@". Even if they look broken (e.g., "pervez.sohu@tgps.pk"). Combine multiple with commas.
+            - PHONE: Extract ALL numbers. Preserving country codes (+92). Look for icons or labels like "Tel", "Mob", "Cell".
+            - WEBSITE: Look for strings containing "www" or ".com", ".pk", ".net".
+            - ADDRESS: Combine all location data found (Street, Road, Building, City, Country). Look for "Head Office", "Karachi Office", "Sukkur".
 
-            Return ONLY a JSON object with these keys:
-            ${cardType === 'cnic' ? 'name, father_name, identity_number, date_of_birth, country_of_stay, gender' : 'name, job_title, company, email, phone, website, address'}
+            CLEANING:
+            - If a field is not found, return "No [field] detected".
+            - Fix OCR typos (e.g., 'v' for 'u', '0' for 'O', '1' for 'I', 'S' for '5').
+
+            Return ONLY a valid JSON object.
+            Keys: ${cardType === 'cnic' ? 'name, father_name, identity_number, date_of_birth, country_of_stay, gender' : 'name, job_title, company, email, phone, website, address'}
         `;
 
         const completion = await groq.chat.completions.create({
@@ -66,7 +84,8 @@ app.post('/api/extract', async (req: any, res: any) => {
                 { role: "system", content: systemPrompt },
                 { role: "user", content: `Raw OCR Text: ${text}` }
             ],
-            response_format: { type: "json_object" }
+            response_format: { type: "json_object" },
+            temperature: 0
         });
 
         const extractedData = JSON.parse(completion.choices[0].message.content || "{}");
@@ -76,7 +95,40 @@ app.post('/api/extract', async (req: any, res: any) => {
 
     } catch (error: any) {
         console.error("System Error:", error.message);
-        res.status(500).json({ success: false, error: "Extraction failed. Please ensure the card is clear." });
+        res.status(500).json({
+            success: false,
+            error: error.message || "Extraction failed. Please ensure the card is clear."
+        });
+    }
+});
+
+app.post('/api/save-lead', async (req: any, res: any) => {
+    try {
+        console.log("Saving new lead to database...");
+        const { cardType, extractedData, imageUrl } = req.body;
+        console.log("Data received:", { cardType, imageUrl });
+
+        const newLead = new Lead({
+            cardType,
+            extractedData,
+            imageUrl
+        });
+
+        const savedLead = await newLead.save();
+        console.log("Lead saved successfully:", savedLead._id);
+        res.json({ success: true, message: "Lead saved to database successfully!" });
+    } catch (error: any) {
+        console.error("Database Error Detail:", error);
+        res.status(500).json({ success: false, error: error.message || "Failed to save lead." });
+    }
+});
+
+app.get('/api/get-leads', async (req: any, res: any) => {
+    try {
+        const leads = await Lead.find().sort({ createdAt: -1 });
+        res.json({ success: true, data: leads });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 

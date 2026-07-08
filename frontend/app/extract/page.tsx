@@ -2,8 +2,10 @@
 import { useState, useEffect } from "react";
 import { RotateCcw, Check, Camera, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function ExtractScreen() {
+    const router = useRouter();
     const [formData, setFormData] = useState({
         name: "",
         job_title: "",
@@ -72,10 +74,34 @@ export default function ExtractScreen() {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSave = () => {
-        alert("Lead Saved Successfully to Records!");
-        // Yahan aap backend par save karne ki API call bhi add kar sakte hain
-        console.log("Saving Lead:", formData);
+    const handleSave = async () => {
+        try {
+            const response = await fetch("http://localhost:5000/api/save-lead", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    cardType,
+                    extractedData: formData,
+                    imageUrl
+                })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || "Server responded with an error");
+            }
+
+            const result = await response.json();
+            if (result.success) {
+                alert("Lead Saved Successfully to Database!");
+                router.push("/records");
+            } else {
+                alert("Database Error: " + result.error);
+            }
+        } catch (error: any) {
+            console.error("Save Error:", error);
+            alert("Error: " + (error.message || "Could not connect to backend server. Check if backend is running on port 5000."));
+        }
     };
 
     return (
