@@ -124,8 +124,8 @@ export default function ExtractScreen() {
                     <div className="lg:col-span-5">
                         <div className="sticky top-10 space-y-6">
                             <div className="bg-white/5 border border-white/10 rounded-2xl p-4 shadow-2xl">
-                                <div className="rounded-xl overflow-hidden bg-black/40 border border-white/5">
-                                    <img src={imageUrl} className="w-full h-full object-cover aspect-[3/2] md:aspect-auto" alt="Scanned Card" />
+                                <div className="rounded-xl overflow-hidden bg-black/40 border border-white/5 min-h-[200px] flex items-center justify-center">
+                                    <img src={imageUrl} className="w-full h-auto max-h-[400px] object-contain" alt="Scanned Card" />
                                 </div>
                                 <div className="mt-6 pt-6 border-t border-white/10 space-y-3">
                                     <div className="flex justify-between text-xs">

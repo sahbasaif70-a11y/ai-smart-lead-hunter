@@ -94,13 +94,13 @@ export default function ScanPage() {
         <div className="flex flex-col lg:flex-row gap-6 w-full mb-8 md:mb-10">
 
           {/* A: CAMERA VIEWPORT (Left Side) */}
-          <div className="flex-grow relative aspect-[4/5] md:aspect-[3/2] rounded-[24px] md:rounded-[32px] overflow-hidden  border border-white/10 group shadow-2xl">
+          <div className="flex-grow relative aspect-square md:aspect-[3/2] rounded-[24px] md:rounded-[32px] overflow-hidden  border border-white/10 group shadow-2xl bg-black">
           < Webcam
            audio={false}
            ref={webcamRef}
            screenshotFormat="image/jpeg"
            screenshotQuality={1}
-           className="rounded-3xl w-full h-full object-cover" playsInline
+           className="w-full h-full object-contain" playsInline
            videoConstraints={{
              facingMode: "environment",
              width: { ideal: 1920 },
