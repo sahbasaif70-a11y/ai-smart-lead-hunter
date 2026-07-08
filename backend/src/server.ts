@@ -42,20 +42,24 @@ app.get('/api/health', (req, res) => {
 
 app.post('/api/extract', async (req: any, res: any) => {
     try {
-        const { image, cardType } = req.body;
-        if (!image) return res.status(400).json({ error: "No image provided" });
+        const { images, cardType } = req.body; // Expects an array: [frontImage, backImage]
+        if (!images || images.length === 0) return res.status(400).json({ error: "No images provided" });
 
-        // 1. Local OCR with Buffer (Better reliability)
-        console.log("Step 1: Running Local OCR...");
-        const imageBuffer = Buffer.from(image.split(",")[1], 'base64');
-        const { data: { text } } = await Tesseract.recognize(imageBuffer, 'eng');
+        let combinedText = "";
+        console.log(`Step 1: Running OCR on ${images.length} images...`);
 
-        console.log("--- OCR RAW OUTPUT ---");
-        console.log(text); // Check your terminal to see this!
-        console.log("----------------------");
+        for (const [index, img] of images.entries()) {
+            const imageBuffer = Buffer.from(img.split(",")[1], 'base64');
+            const { data: { text } } = await Tesseract.recognize(imageBuffer, 'eng');
+            combinedText += `\n--- IMAGE ${index + 1} ---\n${text}`;
+        }
 
-        // 2. Upload for preview
-        const uploadRes = await cloudinary.uploader.upload(image, { folder: "lead_hunter_scans" });
+        console.log("--- COMBINED OCR OUTPUT ---");
+        console.log(combinedText);
+        console.log("---------------------------");
+
+        // Upload first image (front) for preview
+        const uploadRes = await cloudinary.uploader.upload(images[0], { folder: "lead_hunter_scans" });
         const imageUrl = uploadRes.secure_url;
 
         // 3. AI Intelligent Parsing
@@ -63,7 +67,7 @@ app.post('/api/extract', async (req: any, res: any) => {
 
         const systemPrompt = `
             You are an elite data extraction AI. Your task is to extract information from messy OCR text of a ${cardType}.
-            Even if the OCR is broken or missing characters, use your intelligence to reconstruct the correct data.
+            The text may come from multiple sides (front and back) of a card. Combine all information.
 
             EXTRACTION RULES:
             - NAME: Look for the most prominent person's name. It's usually at the top or center-left.if multiple names ()such as partners or sub manager or sub manager) exist, then enter all names and separated them with comma.
@@ -86,7 +90,7 @@ app.post('/api/extract', async (req: any, res: any) => {
             model: "llama-3.3-70b-versatile",
             messages: [
                 { role: "system", content: systemPrompt },
-                { role: "user", content: `Raw OCR Text: ${text}` }
+                { role: "user", content: `Raw OCR Text:\n${combinedText}` }
             ],
             response_format: { type: "json_object" },
             temperature: 0
@@ -101,7 +105,7 @@ app.post('/api/extract', async (req: any, res: any) => {
         console.error("System Error:", error.message);
         res.status(500).json({
             success: false,
-            error: error.message || "Extraction failed. Please ensure the card is clear."
+            error: error.message || "Extraction failed."
         });
     }
 });
@@ -110,7 +114,24 @@ app.post('/api/save-lead', async (req: any, res: any) => {
     try {
         console.log("Saving new lead to database...");
         const { cardType, extractedData, imageUrl } = req.body;
-        console.log("Data received:", { cardType, imageUrl });
+
+        // DUPLICATE PROTECTION: Check if email or phone already exists
+        const email = extractedData.email;
+        const phone = extractedData.phone;
+
+        if (email && !email.includes("No email detected")) {
+            const existingByEmail = await Lead.findOne({ "extractedData.email": email });
+            if (existingByEmail) {
+                return res.status(400).json({ success: false, error: "A lead with this email already exists!" });
+            }
+        }
+
+        if (phone && !phone.includes("No phone detected")) {
+            const existingByPhone = await Lead.findOne({ "extractedData.phone": phone });
+            if (existingByPhone) {
+                return res.status(400).json({ success: false, error: "A lead with this phone number already exists!" });
+            }
+        }
 
         const newLead = new Lead({
             cardType,
@@ -120,9 +141,9 @@ app.post('/api/save-lead', async (req: any, res: any) => {
 
         const savedLead = await newLead.save();
         console.log("Lead saved successfully:", savedLead._id);
-        res.json({ success: true, message: "Lead saved to database successfully!" });
+        res.json({ success: true, message: "Lead saved successfully!" });
     } catch (error: any) {
-        console.error("Database Error Detail:", error);
+        console.error("Database Error:", error);
         res.status(500).json({ success: false, error: error.message || "Failed to save lead." });
     }
 });
@@ -131,7 +152,6 @@ app.get('/api/get-leads', async (req: any, res: any) => {
     try {
         console.log("Fetching leads from database...");
         const leads = await Lead.find().sort({ createdAt: -1 });
-        console.log(`Successfully fetched ${leads.length} leads.`);
         res.json({ success: true, data: leads });
     } catch (error: any) {
         console.error("Error fetching leads:", error);
