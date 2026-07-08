@@ -19,34 +19,67 @@ export default function ScanPage() {
       { id: 'license', label: 'License', icon: <Car size={18} /> },
     ];
 
-    const capture = useCallback(async () =>
-    {
-      const imageSrc = webcamRef.current?.getScreenshot();
-      if(imageSrc){
+    const capture = useCallback(async () => {
+      const video = webcamRef.current?.video;
+      if (video) {
         setLoading(true);
         try {
-          const API_URL = "https://ai-smart-lead-hunter.onrender.com";
-          const response = await fetch(`${API_URL}/api/extract`,{
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({ image: imageSrc, cardType: cardType })
-          });
-          const result = await response.json();
-          if (result.success) {
-            localStorage.setItem("scannedData", JSON.stringify(result.data));
-            localStorage.setItem("scannedImage", result.imageUrl);
-            localStorage.setItem("scannedType", cardType);
-            router.push("/extract");
-          } else {
-            alert("AI Failed: " + result.error);
+          // 1. Create a canvas to crop the image
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+
+          // Set canvas size to the card's aspect ratio (3:2)
+          const outputWidth = 1200;
+          const outputHeight = 800;
+          canvas.width = outputWidth;
+          canvas.height = outputHeight;
+
+          if (ctx) {
+            // Calculate cropping area from the video feed
+            // We want to capture the central 85% width area as seen in the UI mask
+            const videoWidth = video.videoWidth;
+            const videoHeight = video.videoHeight;
+
+            // On mobile, video might be portrait or landscape.
+            // We assume horizontal card placement.
+            const sourceWidth = videoWidth * 0.85;
+            const sourceHeight = sourceWidth * (2/3);
+            const sourceX = (videoWidth - sourceWidth) / 2;
+            const sourceY = (videoHeight - sourceHeight) / 2;
+
+            ctx.drawImage(
+              video,
+              sourceX, sourceY, sourceWidth, sourceHeight, // Source (webcam)
+              0, 0, outputWidth, outputHeight             // Destination (canvas)
+            );
+
+            const croppedImage = canvas.toDataURL("image/jpeg", 0.9);
+
+            const API_URL = "https://ai-smart-lead-hunter.onrender.com";
+            const response = await fetch(`${API_URL}/api/extract`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ image: croppedImage, cardType: cardType })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+              localStorage.setItem("scannedData", JSON.stringify(result.data));
+              localStorage.setItem("scannedImage", result.imageUrl);
+              localStorage.setItem("scannedType", cardType);
+              router.push("/extract");
+            } else {
+              alert("AI Failed: " + result.error);
+            }
           }
         } catch (error) {
-          alert("Backend Server is not running!");
+          console.error("Capture Error:", error);
+          alert("Error capturing card. Please try again.");
         } finally {
           setLoading(false);
         }
       }
-    },[webcamRef, cardType, router]);
+    }, [webcamRef, cardType, router]);
 
     useEffect(() =>{
         if(typeof window !== "undefined"){
@@ -94,41 +127,46 @@ export default function ScanPage() {
         <div className="flex flex-col lg:flex-row gap-6 w-full mb-8 md:mb-10">
 
           {/* A: CAMERA VIEWPORT (Left Side) */}
-          <div className="flex-grow relative aspect-square md:aspect-[3/2] rounded-[24px] md:rounded-[32px] overflow-hidden  border border-white/10 group shadow-2xl bg-black">
-          < Webcam
-           audio={false}
-           ref={webcamRef}
-           screenshotFormat="image/jpeg"
-           screenshotQuality={1}
-           className="w-full h-full object-contain" playsInline
-           videoConstraints={{
-             facingMode: "environment",
-             width: { ideal: 1920 },
-             height: { ideal: 1080 }
-           }}
-           onUserMedia={() => console.log("Camera Connected")}
-           onUserMediaError={(err) => {
-             console.error("Camera Error: ", err);
-           }}
+          <div className="flex-grow relative aspect-[3/2] rounded-[24px] md:rounded-[32px] overflow-hidden border border-white/10 group shadow-2xl bg-black">
+            <Webcam
+              audio={false}
+              ref={webcamRef}
+              screenshotFormat="image/jpeg"
+              screenshotQuality={1}
+              className="w-full h-full object-cover"
+              playsInline
+              videoConstraints={{
+                facingMode: "environment",
+                width: { ideal: 1920 },
+                height: { ideal: 1080 },
+              }}
             />
-            <div className="absolute inset-0 pointer-events-none  ">
-            {/* Viewfinder Corners */}
-            <div className="absolute top-6 left-6 w-8 h-8 border-t-2 border-l-2 border-cyan-500 rounded-tl-lg"></div>
-            <div className="absolute top-6 right-6 w-8 h-8 border-t-2 border-r-2 border-cyan-500 rounded-tr-lg"></div>
-            <div className="absolute bottom-6 left-6 w-8 h-8 border-b-2 border-l-2 border-cyan-500 rounded-bl-lg"></div>
-            <div className="absolute bottom-6 right-6 w-8 h-8 border-b-2 border-r-2 border-cyan-500 rounded-br-lg"></div>
 
-            {/* Auto-detect Badge */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/60 border border-white/10 backdrop-blur-md z-20 whitespace-nowrap">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-[8px] md:text-[10px] text-white font-medium uppercase tracking-wider">
-                Auto-detect: <span className="text-emerald-400">On</span>
-              </span>
+            {/* Dark Overlay Mask */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-full h-full absolute inset-0 bg-black/40"></div>
+              {/* Clear hole in the middle for the card */}
+              <div className="w-[85%] aspect-[3/2] border-2 border-cyan-400/50 rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.4)] z-10 relative">
+                {/* Viewfinder Corners */}
+                <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-cyan-400 rounded-tl-md"></div>
+                <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-cyan-400 rounded-tr-md"></div>
+                <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-cyan-400 rounded-bl-md"></div>
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-cyan-400 rounded-br-md"></div>
+              </div>
             </div>
 
-            {/* Animated Scan Line */}
-            <div className="animate-scan"></div>
-          </div>
+            <div className="absolute inset-0 pointer-events-none z-20">
+              {/* Auto-detect Badge */}
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/60 border border-white/10 backdrop-blur-md whitespace-nowrap">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="text-[8px] md:text-[10px] text-white font-medium uppercase tracking-wider">
+                  Position Card <span className="text-emerald-400 font-bold">Inside Frame</span>
+                </span>
+              </div>
+
+              {/* Animated Scan Line */}
+              <div className="animate-scan"></div>
+            </div>
           </div>
 
           {/* B: CONTROLS PANEL (Right Side) */}
