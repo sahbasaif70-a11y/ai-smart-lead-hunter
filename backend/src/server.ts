@@ -29,7 +29,11 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET as string,
 });
 
-app.use(cors());
+app.use(cors({
+    origin: "*",
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
 app.use(express.json({ limit: '10mb'}));
 
 app.get('/api/health', (req, res) => {
