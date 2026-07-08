@@ -94,7 +94,7 @@ export default function ScanPage() {
         <div className="flex flex-col lg:flex-row gap-6 w-full mb-8 md:mb-10">
 
           {/* A: CAMERA VIEWPORT (Left Side) */}
-          <div className="flex-grow relative aspect-[3/2] md:aspect-[3/2] rounded-[24px] md:rounded-[32px] overflow-hidden  border border-white/10 group shadow-2xl">
+          <div className="flex-grow relative aspect-[4/5] md:aspect-[3/2] rounded-[24px] md:rounded-[32px] overflow-hidden  border border-white/10 group shadow-2xl">
           < Webcam
            audio={false}
            ref={webcamRef}
