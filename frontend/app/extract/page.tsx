@@ -76,7 +76,8 @@ export default function ExtractScreen() {
 
     const handleSave = async () => {
         try {
-            const response = await fetch("http://localhost:5000/api/save-lead", {
+            const API_URL = "https://ai-smart-lead-hunter.onrender.com";
+      const response = await fetch(`${API_URL}/api/save-lead`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
