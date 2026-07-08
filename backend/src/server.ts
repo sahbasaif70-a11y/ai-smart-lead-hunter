@@ -66,7 +66,7 @@ app.post('/api/extract', async (req: any, res: any) => {
             - JOB TITLE: Check the line directly below the name. Look for "Manager", "Executive", "Director", "Engineer", "Officer".
             - COMPANY: Look for branding at the top or near the logo. Also look for names containing "Petroleum", "Service", "Corporation", "LTD", "PVT", "Group", "Industries", "TGPS", "Taj".
             - EMAIL: Find ALL strings with "@". Even if they look broken (e.g., "pervez.sohu@tgps.pk"). Combine multiple with commas.
-            - PHONE: Extract ALL numbers. Preserving country codes (+92). Look for icons or labels like "Tel", "Mob", "Cell".
+            - PHONE: Extract ALL numerical patterns that look like phone numbers (e.g., +92-XX-XXXXXXX, 03XX-XXXXXXX, (+92), (92-21)like patterns,. Look for labels like "Tel", "Mob", "Cell", "Ph", "Fax". If multiple numbers exist, prioritize the Mobile number. Combine them with slashes if needed.
             - WEBSITE: Look for strings containing "www" or ".com", ".pk", ".net".
             - ADDRESS: Combine all location data found (Street, Road, Building, City, Country). Look for "Head Office", "Karachi Office", "Sukkur".
 
