@@ -66,8 +66,8 @@ app.post('/api/extract', async (req: any, res: any) => {
             Even if the OCR is broken or missing characters, use your intelligence to reconstruct the correct data.
 
             EXTRACTION RULES:
-            - NAME: Look for the most prominent person's name. It's usually at the top or center-left.
-            - JOB TITLE: Check the line directly below the name. Look for "Manager", "Executive", "Director", "Engineer", "Officer".
+            - NAME: Look for the most prominent person's name. It's usually at the top or center-left.if multiple names ()such as partners or sub manager or sub manager) exist, then enter all names and separated them with comma.
+            - JOB TITLE: Check the line directly below the name. Look for "Manager", "Executive", "Director", "Engineer", "Officer" Please accurately fetch the job title.
             - COMPANY: Look for branding at the top or near the logo. Also look for names containing "Petroleum", "Service", "Corporation", "LTD", "PVT", "Group", "Industries", "TGPS", "Taj".
             - EMAIL: Find ALL strings with "@". Even if they look broken (e.g., "pervez.sohu@tgps.pk"). Combine multiple with commas.
             - PHONE: Extract ALL numerical patterns that look like phone numbers (e.g., +92-XX-XXXXXXX, 03XX-XXXXXXX, (+92), (92-21)like patterns,. Look for labels like "Tel", "Mob", "Cell", "Ph", "Fax". If multiple numbers exist, prioritize the Mobile number. Combine them with slashes if needed.
@@ -129,9 +129,12 @@ app.post('/api/save-lead', async (req: any, res: any) => {
 
 app.get('/api/get-leads', async (req: any, res: any) => {
     try {
+        console.log("Fetching leads from database...");
         const leads = await Lead.find().sort({ createdAt: -1 });
+        console.log(`Successfully fetched ${leads.length} leads.`);
         res.json({ success: true, data: leads });
     } catch (error: any) {
+        console.error("Error fetching leads:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
