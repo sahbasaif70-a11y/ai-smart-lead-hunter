@@ -8,14 +8,63 @@ import {
   MoreVertical,
   ChevronLeft,
   ChevronRight,
-  Loader2
+  Loader2,
+  FileSpreadsheet,
+  FileText
 } from "lucide-react";
 import Link from "next/link";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default function RecordsPage() {
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showExportMenu, setShowExportMenu] = useState(false);
+
+  // --- EXPORT LOGIC ---
+  const exportToExcel = () => {
+    const dataToExport = filteredRecords.map(rec => ({
+      Name: rec.extractedData.name,
+      Type: rec.cardType,
+      JobTitle: rec.extractedData.job_title || "N/A",
+      Company: rec.extractedData.company || "N/A",
+      Email: rec.extractedData.email || "N/A",
+      Phone: rec.extractedData.phone || "N/A",
+      Website: rec.extractedData.website || "N/A",
+      Address: rec.extractedData.address || "N/A",
+      Date: new Date(rec.createdAt).toLocaleDateString()
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Leads");
+    XLSX.writeFile(wb, "LeadHunter_Records.xlsx");
+    setShowExportMenu(false);
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.text("Lead Hunter - Scanned Records", 14, 15);
+
+    const tableData = filteredRecords.map(rec => [
+      rec.extractedData.name,
+      rec.cardType,
+      rec.extractedData.email || "N/A",
+      rec.extractedData.phone || "N/A",
+      new Date(rec.createdAt).toLocaleDateString()
+    ]);
+
+    autoTable(doc, {
+      head: [['Name', 'Type', 'Email', 'Phone', 'Date']],
+      body: tableData,
+      startY: 20,
+    });
+
+    doc.save("LeadHunter_Records.pdf");
+    setShowExportMenu(false);
+  };
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -50,10 +99,30 @@ export default function RecordsPage() {
             <h1 className="text-2xl md:text-3xl font-bold text-white font-space">All Records</h1>
             <p className="text-gray-500 text-xs md:text-sm">Manage your all scanned documents</p>
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white px-4 py-2 rounded-xl text-xs md:text-sm hover:bg-white/10 transition-all">
-              Export <ChevronDown size={14} />
-            </button>
+          <div className="flex items-center gap-2 w-full sm:w-auto relative">
+            <div className="relative">
+              <button
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white px-4 py-2 rounded-xl text-xs md:text-sm hover:bg-white/10 transition-all">
+                Export <ChevronDown size={14} />
+              </button>
+
+              {showExportMenu && (
+                <div className="absolute top-full mt-2 right-0 w-48 bg-[#0f172a] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
+                  <button
+                    onClick={exportToExcel}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition-all text-left">
+                    <FileSpreadsheet size={16} className="text-emerald-500" /> Export to Excel
+                  </button>
+                  <button
+                    onClick={exportToPDF}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition-all text-left">
+                    <FileText size={16} className="text-red-500" /> Export to PDF
+                  </button>
+                </div>
+              )}
+            </div>
+
             <Link href="/scan" className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 md:px-5 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-bold shadow-lg shadow-blue-600/20">
               <Plus size={18} /> New Scan
             </Link>
