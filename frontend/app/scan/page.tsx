@@ -25,7 +25,8 @@ export default function ScanPage() {
       if(imageSrc){
         setLoading(true);
         try {
-          const response = await fetch("http://localhost:5000/api/extract",{
+          const API_URL = "https://ai-smart-lead-hunter.onrender.com";
+          const response = await fetch(`${API_URL}/api/extract`,{
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({ image: imageSrc, cardType: cardType })

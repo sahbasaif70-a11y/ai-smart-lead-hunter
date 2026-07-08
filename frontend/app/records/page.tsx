@@ -20,7 +20,8 @@ export default function RecordsPage() {
   useEffect(() => {
     const fetchLeads = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/get-leads");
+        const API_URL = "https://ai-smart-lead-hunter.onrender.com";
+        const response = await fetch(`${API_URL}/api/get-leads`);
         const result = await response.json();
         if (result.success) {
           setRecords(result.data);
