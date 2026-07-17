@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { RotateCcw, Check, Camera, ArrowLeft } from "lucide-react";
+import { Check, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -17,6 +17,7 @@ export default function ExtractScreen() {
     });
     const [imageUrl, setImageUrl] = useState("/card-sample.png");
     const [cardType, setCardType] = useState("business");
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         const savedData = localStorage.getItem("scannedData");
@@ -28,58 +29,26 @@ export default function ExtractScreen() {
         setCardType(savedType);
     }, []);
 
-    // Fields definition based on card type
-    const getFields = () => {
-        switch(cardType) {
-            case 'cnic':
-                return [
-                    { label: "Full Name", name: "name" },
-                    { label: "Father Name", name: "father_name" },
-                    { label: "CNIC Number", name: "identity_number" },
-                    { label: "Date of Birth", name: "date_of_birth" },
-                    { label: "Country of Stay", name: "country_of_stay" },
-                    { label: "Gender", name: "gender" }
-                ];
-            case 'passport':
-                return [
-                    { label: "Passport Number", name: "passport_number" },
-                    { label: "Surname", name: "surname" },
-                    { label: "Given Names", name: "given_names" },
-                    { label: "Nationality", name: "nationality" },
-                    { label: "Date of Birth", name: "date_of_birth" },
-                    { label: "Expiry Date", name: "date_of_expiry" }
-                ];
-            case 'license':
-                return [
-                    { label: "License Number", name: "license_number" },
-                    { label: "Full Name", name: "name" },
-                    { label: "Father/Husband Name", name: "father_husband_name" },
-                    { label: "Expiry Date", name: "date_of_expiry" },
-                    { label: "Address", name: "address", full: true }
-                ];
-            default:
-                return [
-                    { label: "Full Name", name: "name" },
-                    { label: "Job Title", name: "job_title" },
-                    { label: "Company", name: "company" },
-                    { label: "Email", name: "email" },
-                    { label: "Phone", name: "phone" },
-                    { label: "Website", name: "website" },
-                    { label: "Address", name: "address", full: true }
-                ];
-        }
-    };
-
     const handleChange = (e: any) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleSave = async () => {
+        setSaving(true);
         try {
-            const API_URL = "https://ai-smart-lead-hunter.onrender.com";
-      const response = await fetch(`${API_URL}/api/save-lead`, {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                alert("Please login to save leads.");
+                router.push("/login");
+                return;
+            }
+            const API_URL = "http://localhost:5000";
+            const response = await fetch(`${API_URL}/api/save-lead`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
                 body: JSON.stringify({
                     cardType,
                     extractedData: formData,
@@ -89,98 +58,110 @@ export default function ExtractScreen() {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                throw new Error(errorText || "Server responded with an error");
+                throw new Error(errorText || "Server error");
             }
 
             const result = await response.json();
             if (result.success) {
-                alert("Lead Saved Successfully to Database!");
+                alert("Lead Saved Successfully!");
                 router.push("/records");
             } else {
-                alert("Database Error: " + result.error);
+                alert("Error: " + result.error);
             }
         } catch (error: any) {
             console.error("Save Error:", error);
-            alert("Error: " + (error.message || "Could not connect to backend server. Check if backend is running on port 5000."));
+            alert("Error: " + (error.message || "Connection failed."));
+        } finally {
+            setSaving(false);
         }
     };
 
     return (
-        <main className="min-h-screen p-4 md:p-10 bg-[#020617] bg-grid">
+        <main className="min-h-screen bg-[#020617] p-4 md:p-10 pt-20">
             <div className="max-w-6xl mx-auto">
-                <Link href="/scan" className="text-gray-500 hover:text-white flex items-center gap-2 mb-6 transition-colors">
+                <Link href="/scan" className="inline-flex items-center gap-2 text-gray-500 hover:text-white transition-colors mb-10 font-bold uppercase tracking-widest text-[10px]">
                     <ArrowLeft size={16} /> Back to Scanner
                 </Link>
 
-                <div className="flex justify-between items-center mb-8">
-                    <div>
-                        <h2 className="text-2xl font-bold text-white font-space">Review Lead</h2>
-                        <p className="text-gray-500 text-sm mt-1">Verify and refine the extracted business card info</p>
-                    </div>
+                <div className="mb-12">
+                    <h2 className="text-3xl font-bold text-white font-space uppercase tracking-tight">Review Result</h2>
+                    <p className="text-gray-500 text-sm mt-1">Verify and save extracted business card data</p>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                    {/* LEFT SIDE - Card Preview */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                    {/* LEFT SIDE - Preview */}
                     <div className="lg:col-span-5">
-                        <div className="sticky top-10 space-y-6">
-                            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 shadow-2xl">
-                                <div className="aspect-[3/2] rounded-xl overflow-hidden bg-black/40 border border-white/5 shadow-inner">
-                                    <img src={imageUrl} className="w-full h-full object-cover scale-110 md:scale-100 transition-transform hover:scale-125 cursor-zoom-in" alt="Scanned Card" />
+                        <div className="bg-white/5 border border-white/10 rounded-[40px] p-6 shadow-2xl sticky top-24">
+                            <div className="aspect-[3/2] rounded-3xl overflow-hidden bg-black/40 border border-white/5 shadow-inner mb-8">
+                                <img src={imageUrl} className="w-full h-full object-cover scale-110" alt="Scanned Card" />
+                            </div>
+                            <div className="space-y-4 pt-6 border-t border-white/10">
+                                <div className="flex justify-between items-center text-[10px] font-extrabold uppercase tracking-[0.2em]">
+                                    <span className="text-gray-500">Document Type</span>
+                                    <span className="text-white px-3 py-1 bg-white/5 rounded-lg border border-white/5">Business Card</span>
                                 </div>
-                                <div className="mt-6 pt-6 border-t border-white/10 space-y-3">
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-white font-bold uppercase tracking-wider">Source</span>
-                                        <span className="text-gray-500 uppercase">{cardType} Card</span>
-                                    </div>
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-white font-bold uppercase tracking-wider">Status</span>
-                                        <span className="text-emerald-400 font-bold">Processed</span>
-                                    </div>
+                                <div className="flex justify-between items-center text-[10px] font-extrabold uppercase tracking-[0.2em]">
+                                    <span className="text-gray-500">Status</span>
+                                    <span className="text-emerald-400">Processed</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* RIGHT SIDE - Form Fields */}
-                    <div className="lg:col-span-7 bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {getFields().map((field) => (
-                                <div key={field.name} className={`space-y-2 ${field.full ? "md:col-span-2" : ""}`}>
-                                    <label className="text-[10px] text-gray-500 uppercase font-bold tracking-widest ml-1">
-                                        {field.label}
-                                    </label>
-                                    <div className="relative group">
-                                        <input
-                                            type="text"
-                                            name={field.name}
-                                            value={(formData as any)[field.name] || ""}
-                                            onChange={handleChange}
-                                            className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all"
-                                            placeholder={`No ${field.label} detected`}
-                                        />
-                                        {(formData as any)[field.name] && (
-                                            <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                                <Check className="text-emerald-500" size={16} />
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
+                    {/* RIGHT SIDE - Data Form */}
+                    <div className="lg:col-span-7 bg-[#0f172a]/40 border border-white/5 rounded-[48px] p-8 md:p-12 shadow-2xl">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <FormField label="Full Name" name="name" value={formData.name} onChange={handleChange} />
+                            <FormField label="Job Title" name="job_title" value={formData.job_title} onChange={handleChange} />
+                            <FormField label="Company" name="company" value={formData.company} onChange={handleChange} />
+                            <FormField label="Email" name="email" value={formData.email} onChange={handleChange} />
+                            <FormField label="Phone" name="phone" value={formData.phone} onChange={handleChange} />
+                            <FormField label="Website" name="website" value={formData.website} onChange={handleChange} />
+                            <FormField label="Address" name="address" value={formData.address} onChange={handleChange} full />
                         </div>
 
-                        <div className="flex gap-4 mt-10">
-                            <button className="flex-1 py-4 rounded-xl border border-white/10 text-sm font-bold text-gray-400 hover:bg-white/10 transition-all">
+                        <div className="flex gap-4 mt-12">
+                            <button
+                                onClick={() => router.push("/scan")}
+                                className="flex-1 py-4 rounded-2xl border border-white/10 text-[10px] font-extrabold uppercase tracking-widest text-gray-500 hover:text-white hover:bg-white/5 transition-all">
                                 Discard
                             </button>
                             <button
                                 onClick={handleSave}
-                                className="flex-1 py-4 bg-blue-600 hover:bg-blue-500 rounded-xl text-sm font-bold text-white shadow-xl shadow-blue-900/20 transition-all">
-                                Save Lead
+                                disabled={saving}
+                                className="flex-1 py-4 bg-gradient-to-r from-cyan-400 to-blue-700 hover:opacity-90 disabled:opacity-50 rounded-2xl text-[10px] font-extrabold uppercase tracking-widest text-white shadow-2xl shadow-blue-600/40 transition-all flex items-center justify-center gap-2">
+                                {saving ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />}
+                                {saving ? "Saving..." : "Save Lead"}
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
         </main>
+    );
+}
+
+function FormField({ label, name, value, onChange, full }: any) {
+    return (
+        <div className={`space-y-2.5 ${full ? "md:col-span-2" : ""}`}>
+            <label className="text-[10px] text-gray-600 uppercase font-extrabold tracking-[0.2em] ml-2">
+                {label}
+            </label>
+            <div className="relative group">
+                <input
+                    type="text"
+                    name={name}
+                    value={value || ""}
+                    onChange={onChange}
+                    className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-blue-500/50 focus:bg-white/[0.05] transition-all"
+                    placeholder={`No ${label.toLowerCase()} found`}
+                />
+                {value && (
+                    <div className="absolute right-5 top-1/2 -translate-y-1/2">
+                        <Check className="text-emerald-500" size={16} />
+                    </div>
+                )}
+            </div>
+        </div>
     );
 }

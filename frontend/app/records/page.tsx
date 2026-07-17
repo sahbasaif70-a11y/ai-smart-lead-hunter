@@ -10,18 +10,23 @@ import {
   ChevronRight,
   Loader2,
   FileSpreadsheet,
-  FileText
+  FileText,
+  Menu
 } from "lucide-react";
 import Link from "next/link";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import Sidebar from "../component/common/Sidebar";
+import { useRouter } from "next/navigation";
 
 export default function RecordsPage() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const router = useRouter();
 
   // --- EXPORT LOGIC ---
   const exportToExcel = () => {
@@ -69,11 +74,20 @@ export default function RecordsPage() {
   useEffect(() => {
     const fetchLeads = async () => {
       try {
-        const API_URL = "https://ai-smart-lead-hunter.onrender.com";
-        const response = await fetch(`${API_URL}/api/get-leads`);
+        const token = localStorage.getItem("token");
+        if (!token) {
+          router.push("/login");
+          return;
+        }
+        const API_URL = "http://localhost:5000";
+        const response = await fetch(`${API_URL}/api/get-leads`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
         const result = await response.json();
         if (result.success) {
           setRecords(result.data);
+        } else {
+          router.push("/login");
         }
       } catch (error) {
         console.error("Error fetching leads:", error);
@@ -82,7 +96,7 @@ export default function RecordsPage() {
       }
     };
     fetchLeads();
-  }, []);
+  }, [router]);
 
   const filteredRecords = records.filter(rec =>
     rec.extractedData.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -90,15 +104,28 @@ export default function RecordsPage() {
   );
 
   return (
-    <main className="min-h-screen bg-[#020617] p-4 md:p-8 pt-20">
-      <div className="max-w-7xl mx-auto">
+    <main className="min-h-screen bg-[#020617] flex font-sans overflow-x-hidden">
+
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+
+      {/* --- MAIN CONTENT --- */}
+      <section className="flex-grow p-4 md:p-8 lg:p-10 w-full overflow-y-auto pt-20 lg:pt-10">
 
         {/* --- HEADER --- */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white font-space">All Records</h1>
-            <p className="text-gray-500 text-xs md:text-sm">Manage your all scanned documents</p>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-2 bg-white/5 border border-white/10 rounded-xl text-gray-400"
+            >
+              <Menu size={24} />
+            </button>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-white font-space">All Records</h1>
+              <p className="text-gray-500 text-xs md:text-sm mt-1">Manage your all scanned documents</p>
+            </div>
           </div>
+
           <div className="flex items-center gap-2 w-full sm:w-auto relative">
             <div className="relative">
               <button
@@ -123,7 +150,7 @@ export default function RecordsPage() {
               )}
             </div>
 
-            <Link href="/scan" className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 md:px-5 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-bold shadow-lg shadow-blue-600/20">
+            <Link href="/scan" className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-400 to-blue-700 hover:opacity-90 text-white px-4 md:px-5 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-bold shadow-lg shadow-blue-600/20 uppercase tracking-widest">
               <Plus size={18} /> New Scan
             </Link>
           </div>
@@ -138,7 +165,7 @@ export default function RecordsPage() {
               placeholder="Search records by name or type..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-[#0f172a]/50 border border-white/5 rounded-xl py-2.5 pl-12 pr-4 text-sm text-white focus:outline-none"
+              className="w-full bg-[#0f172a]/50 border border-white/5 rounded-xl py-2.5 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-blue-500/30 transition-all"
             />
           </div>
           <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar whitespace-nowrap">
@@ -149,7 +176,7 @@ export default function RecordsPage() {
         </div>
 
         {/* --- TABLE SECTION --- */}
-        <div className="bg-[#0f172a]/30 border border-white/5 rounded-[32px] overflow-hidden backdrop-blur-xl">
+        <div className="bg-[#0f172a]/30 border border-white/5 rounded-[32px] overflow-hidden backdrop-blur-xl shadow-2xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left min-w-[800px]">
               <thead>
@@ -228,7 +255,7 @@ export default function RecordsPage() {
           </div>
         )}
 
-      </div>
+      </section>
     </main>
   );
 }

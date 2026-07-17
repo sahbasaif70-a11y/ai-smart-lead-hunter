@@ -1,4 +1,6 @@
+"use client";
 import { Camera, Cpu, Lock, Cloud } from "lucide-react";
+
 export default function Footer(){
     return(
         <footer className="w-full pt-20 pb-10 px-8 border-t border-white/5 bg-[#020617] ">
@@ -50,5 +52,4 @@ export default function Footer(){
             
         </footer>
     );
-
 }

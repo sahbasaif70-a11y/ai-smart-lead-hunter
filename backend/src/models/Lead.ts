@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ILead extends Document {
+    userId?: string;
     cardType: string;
     extractedData: any;
     imageUrl: string;
@@ -8,6 +9,7 @@ export interface ILead extends Document {
 }
 
 const LeadSchema: Schema = new Schema({
+    userId: { type: Schema.Types.ObjectId, ref: 'User' },
     cardType: { type: String, required: true },
     extractedData: { type: Object, required: true },
     imageUrl: { type: String, required: true },

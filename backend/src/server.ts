@@ -6,16 +6,34 @@ import OpenAI from 'openai';
 import Tesseract from 'tesseract.js';
 import mongoose from 'mongoose';
 import Lead from './models/Lead';
+import User from './models/User';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_key';
 
 // Database Connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/lead_hunter')
     .then(() => console.log("Connected to MongoDB"))
     .catch(err => console.error("Could not connect to MongoDB", err));
+
+// Auth Middleware
+const authenticateToken = (req: any, res: any, next: any) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) return res.status(401).json({ success: false, error: "Access denied. No token provided." });
+
+    jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
+        if (err) return res.status(403).json({ success: false, error: "Invalid token." });
+        req.user = user;
+        next();
+    });
+};
 
 // Groq Setup
 const groq = new OpenAI({
@@ -38,6 +56,39 @@ app.use(express.json({ limit: '10mb'}));
 
 app.get('/api/health', (req, res) => {
     res.json({ status: "ok", db: mongoose.connection.readyState });
+});
+
+// Auth Routes
+app.post('/api/auth/register', async (req: any, res: any) => {
+    try {
+        const { name, email, password } = req.body;
+        const existingUser = await User.findOne({ email });
+        if (existingUser) return res.status(400).json({ success: false, error: "User already exists" });
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newUser = new User({ name, email, password: hashedPassword });
+        await newUser.save();
+
+        res.json({ success: true, message: "User registered successfully" });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.post('/api/auth/login', async (req: any, res: any) => {
+    try {
+        const { email, password } = req.body;
+        const user = await User.findOne({ email });
+        if (!user) return res.status(400).json({ success: false, error: "User not found" });
+
+        const validPassword = await bcrypt.compare(password, user.password);
+        if (!validPassword) return res.status(400).json({ success: false, error: "Invalid password" });
+
+        const token = jwt.sign({ id: user._id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
+        res.json({ success: true, token, user: { id: user._id, name: user.name, email: user.email } });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
 
 app.post('/api/extract', async (req: any, res: any) => {
@@ -110,30 +161,32 @@ app.post('/api/extract', async (req: any, res: any) => {
     }
 });
 
-app.post('/api/save-lead', async (req: any, res: any) => {
+app.post('/api/save-lead', authenticateToken, async (req: any, res: any) => {
     try {
-        console.log("Saving new lead to database...");
+        console.log("Saving new lead to database for user:", req.user.id);
         const { cardType, extractedData, imageUrl } = req.body;
+        const userId = req.user.id;
 
-        // DUPLICATE PROTECTION: Check if email or phone already exists
+        // DUPLICATE PROTECTION: Check if email or phone already exists FOR THIS USER
         const email = extractedData.email;
         const phone = extractedData.phone;
 
         if (email && !email.includes("No email detected")) {
-            const existingByEmail = await Lead.findOne({ "extractedData.email": email });
+            const existingByEmail = await Lead.findOne({ userId, "extractedData.email": email });
             if (existingByEmail) {
                 return res.status(400).json({ success: false, error: "A lead with this email already exists!" });
             }
         }
 
         if (phone && !phone.includes("No phone detected")) {
-            const existingByPhone = await Lead.findOne({ "extractedData.phone": phone });
+            const existingByPhone = await Lead.findOne({ userId, "extractedData.phone": phone });
             if (existingByPhone) {
                 return res.status(400).json({ success: false, error: "A lead with this phone number already exists!" });
             }
         }
 
         const newLead = new Lead({
+            userId,
             cardType,
             extractedData,
             imageUrl
@@ -148,10 +201,18 @@ app.post('/api/save-lead', async (req: any, res: any) => {
     }
 });
 
-app.get('/api/get-leads', async (req: any, res: any) => {
+app.get('/api/get-leads', authenticateToken, async (req: any, res: any) => {
     try {
-        console.log("Fetching leads from database...");
-        const leads = await Lead.find().sort({ createdAt: -1 });
+        console.log("Fetching leads from database for user:", req.user.id);
+        const userId = req.user.id;
+        // Return leads for this user OR leads that have no userId (legacy data)
+        const leads = await Lead.find({
+            $or: [
+                { userId: userId },
+                { userId: { $exists: false } },
+                { userId: null }
+            ]
+        }).sort({ createdAt: -1 });
         res.json({ success: true, data: leads });
     } catch (error: any) {
         console.error("Error fetching leads:", error);
