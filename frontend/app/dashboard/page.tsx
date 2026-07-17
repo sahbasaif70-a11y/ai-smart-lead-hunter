@@ -76,15 +76,15 @@ export default function Dashboard() {
   const storagePercentage = Math.max(Math.round((parseFloat(storageUsed) / 200) * 100), 1);
 
   return (
-    <main className="min-h-screen bg-[#020617] flex font-sans overflow-x-hidden">
+    <main className="min-h-screen bg-[#020617] flex font-sans overflow-x-hidden bg-grid">
 
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       {/* --- MAIN CONTENT --- */}
-      <section className="flex-grow p-4 md:p-8 lg:p-10 w-full overflow-y-auto">
+      <section className="flex-grow p-4 md:p-8 lg:p-10 w-full overflow-y-auto ">
         
         {/* Header */}
-        <div className="flex justify-between items-center mb-8 md:mb-10">
+        <div className="flex justify-between items-center mb-8 md:mb-10 ">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -113,7 +113,7 @@ export default function Dashboard() {
         ) : (
           <>
             {/* TOP STATS CARDS */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-10 bg-[#020617]">
               <StatCard title="Total Documents" value={totalDocuments.toLocaleString()} change={`+${scanIncrease}%`} type="up" color="#3b82f6" />
               <StatCard title="OCR Accuracy" value="99.9%" change="+2.1%" type="up" color="#10b981" />
               <StatCard title="Avg. Scan Time" value="0.8s" change="-0.2s" type="down" color="#ef4444" />
@@ -129,7 +129,7 @@ export default function Dashboard() {
             </div>
 
             {/* BOTTOM SECTION GRID */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 bg-[#020617]">
 
               <RecentScans leads={leads.slice(0, 4)} />
               <ActivityTimeline leads={leads.slice(0, 3)} />

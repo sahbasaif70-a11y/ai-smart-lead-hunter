@@ -50,7 +50,7 @@ export default function LoginPage() {
     };
 
     return (
-        <main className="min-h-screen bg-[#020617] flex items-center justify-center p-4">
+        <main className="min-h-screen bg-[#020617] flex items-center justify-center p-4 bg-grid">
             <div className="max-w-md w-full bg-[#0f172a] border border-white/10 rounded-[32px] p-8 shadow-2xl">
                 <div className="text-center mb-8">
                     <h1 className="text-2xl font-bold text-white mb-2 font-space uppercase tracking-tight">

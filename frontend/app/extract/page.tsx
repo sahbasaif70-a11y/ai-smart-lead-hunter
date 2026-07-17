@@ -77,7 +77,7 @@ export default function ExtractScreen() {
     };
 
     return (
-        <main className="min-h-screen bg-[#020617] p-4 md:p-10 pt-20">
+        <main className="min-h-screen bg-[#020617] p-4 md:p-10 pt-20 bg-grid">
             <div className="max-w-6xl mx-auto">
                 <Link href="/scan" className="inline-flex items-center gap-2 text-gray-500 hover:text-white transition-colors mb-10 font-bold uppercase tracking-widest text-[10px]">
                     <ArrowLeft size={16} /> Back to Scanner
@@ -90,8 +90,8 @@ export default function ExtractScreen() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                     {/* LEFT SIDE - Preview */}
-                    <div className="lg:col-span-5">
-                        <div className="bg-white/5 border border-white/10 rounded-[40px] p-6 shadow-2xl sticky top-24">
+                    <div className="lg:col-span-5 bg-[#020617]">
+                        <div className="bg-white/5 border border-white/10 rounded-[40px] p-6 shadow-2xl sticky top-24 bg-[#020617]">
                             <div className="aspect-[3/2] rounded-3xl overflow-hidden bg-black/40 border border-white/5 shadow-inner mb-8">
                                 <img src={imageUrl} className="w-full h-full object-cover scale-110" alt="Scanned Card" />
                             </div>
@@ -109,8 +109,9 @@ export default function ExtractScreen() {
                     </div>
 
                     {/* RIGHT SIDE - Data Form */}
-                    <div className="lg:col-span-7 bg-[#0f172a]/40 border border-white/5 rounded-[48px] p-8 md:p-12 shadow-2xl">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                    <div className="lg:col-span-7 bg-[#020617] bg-[#0f172a]/40 border border-white/5 rounded-[48px] p-8 md:p-12 shadow-2xl">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 ">
                             <FormField label="Full Name" name="name" value={formData.name} onChange={handleChange} />
                             <FormField label="Job Title" name="job_title" value={formData.job_title} onChange={handleChange} />
                             <FormField label="Company" name="company" value={formData.company} onChange={handleChange} />
@@ -135,6 +136,7 @@ export default function ExtractScreen() {
                             </button>
                         </div>
                     </div>
+
                 </div>
             </div>
         </main>

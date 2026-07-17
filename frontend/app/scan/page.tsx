@@ -107,6 +107,9 @@ export default function ScanPage() {
 
           {/* SCANNER WINDOW */}
           <div className="flex-grow relative aspect-[3/2] rounded-[24px] md:rounded-[32px] overflow-hidden border border-white/10 group shadow-2xl bg-black">
+            {/* Animated Scan Line */}
+            <div className="animate-scan"></div>
+
             <Webcam
               audio={false}
               ref={webcamRef}
@@ -150,7 +153,7 @@ export default function ScanPage() {
                     <button
                         onClick={handleCapture}
                         className="w-24 h-24 rounded-full border-4 border-white/20 p-2 hover:scale-105 transition-all group relative">
-                        <div className="w-full h-full bg-gradient-to-r from-cyan-400 to-blue-700 rounded-full flex items-center justify-center text-[10px] text-white font-extrabold shadow-lg shadow-blue-600/40">FRONT</div>
+                        <div className="w-full h-full bg-gradient-to-r from-cyan-400 to-blue-700 rounded-full flex items-center justify-center text-[10px] text-white font-extrabold shadow-lg shadow-blue-600/40 uppercase tracking-widest">FRONT</div>
                         <div className="absolute inset-0 rounded-full bg-blue-400/20 animate-ping -z-10"></div>
                     </button>
                 ) : capturedImages.length === 1 ? (
@@ -173,7 +176,7 @@ export default function ScanPage() {
                         </div>
                         <button
                             onClick={handleExtract}
-                            className="w-full py-4 bg-gradient-to-r from-cyan-400 to-blue-700 text-white rounded-2xl text-sm font-bold shadow-xl shadow-blue-600/40">
+                            className="w-full py-4 bg-gradient-to-r from-cyan-400 to-blue-700 text-white rounded-2xl text-sm font-bold shadow-xl shadow-blue-600/40 uppercase tracking-widest">
                             EXTRACT NOW
                         </button>
                     </div>
