@@ -42,7 +42,7 @@ export default function ExtractScreen() {
                 router.push("/login");
                 return;
             }
-            const API_URL = "http://localhost:5000";
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
             const response = await fetch(`${API_URL}/api/save-lead`, {
                 method: "POST",
                 headers: {

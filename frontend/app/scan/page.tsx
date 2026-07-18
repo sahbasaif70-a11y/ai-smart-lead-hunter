@@ -59,7 +59,7 @@ export default function ScanPage() {
         if (capturedImages.length === 0) return;
         setLoading(true);
         try {
-            const API_URL = "http://localhost:5000";
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
             const response = await fetch(`${API_URL}/api/extract`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
