@@ -17,12 +17,14 @@ export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [userName, setUserName] = useState("User");
   const router = useRouter();
 
   useEffect(() => {
     const fetchLeads = async () => {
       try {
+        setError(null);
         const token = localStorage.getItem("token");
         const userStr = localStorage.getItem("user");
 
@@ -40,10 +42,15 @@ export default function Dashboard() {
           }
         }
 
-        const API_URL = "http://localhost:5000";
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
         const response = await fetch(`${API_URL}/api/get-leads`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
+
+        if (!response.ok) {
+           throw new Error(`Server error: ${response.status}`);
+        }
+
         const result = await response.json();
         if (result.success) {
           setLeads(result.data);
@@ -52,8 +59,9 @@ export default function Dashboard() {
           localStorage.removeItem("user");
           router.push("/login");
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching leads:", error);
+        setError(error.message || "Connection failed");
       } finally {
         setLoading(false);
       }

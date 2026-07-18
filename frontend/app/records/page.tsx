@@ -24,6 +24,7 @@ export default function RecordsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showExportMenu, setShowExportMenu] = useState(false);
   const router = useRouter();
@@ -74,23 +75,31 @@ export default function RecordsPage() {
   useEffect(() => {
     const fetchLeads = async () => {
       try {
+        setError(null);
         const token = localStorage.getItem("token");
         if (!token) {
           router.push("/login");
           return;
         }
-        const API_URL = "http://localhost:5000";
+        // Use environment variable if available, otherwise fallback to localhost
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
         const response = await fetch(`${API_URL}/api/get-leads`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
+
+        if (!response.ok) {
+           throw new Error(`Server responded with ${response.status}`);
+        }
+
         const result = await response.json();
         if (result.success) {
           setRecords(result.data);
         } else {
           router.push("/login");
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching leads:", error);
+        setError(error.message || "Failed to connect to server");
       } finally {
         setLoading(false);
       }
@@ -196,6 +205,16 @@ export default function RecordsPage() {
                       <div className="flex flex-col items-center gap-3">
                         <Loader2 className="animate-spin text-blue-500" size={32} />
                         <p className="text-gray-500 text-sm">Loading records from database...</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : error ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-20 text-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <p className="text-red-400 font-bold uppercase tracking-widest text-xs">Connection Error</p>
+                        <p className="text-gray-500 text-sm">{error}</p>
+                        <p className="text-gray-600 text-[10px] mt-2 italic">Check if your backend is running at {process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}</p>
                       </div>
                     </td>
                   </tr>
