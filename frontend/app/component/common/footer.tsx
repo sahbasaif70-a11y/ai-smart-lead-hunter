@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Mail, Phone, MapPin, Github, Twitter, Linkedin, Facebook, ArrowRight } from "lucide-react";
+import { Mail, Phone, MapPin, ArrowRight, Globe, Share2, MessageSquare, Send } from "lucide-react";
 import Link from "next/link";
 
 export default function Footer() {
@@ -8,10 +8,10 @@ export default function Footer() {
 
   // Social icons mapping with safe fallback
   const socialIcons = [
-    { Icon: Github, href: "#" },
-    { Icon: Twitter, href: "#" },
-    { Icon: Linkedin, href: "#" },
-    { Icon: Facebook, href: "#" }
+    { Icon: Globe, href: "#" },
+    { Icon: MessageSquare, href: "#" },
+    { Icon: Share2, href: "#" },
+    { Icon: Send, href: "#" }
   ];
 
   return (
